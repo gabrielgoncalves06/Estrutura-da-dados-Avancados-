@@ -3,293 +3,272 @@
 #include <string.h>
 
 
-typedef struct Funcionario {
-    int matricula;              
-    char nome[100];             
-    char cargo[50];             
-    float salario;              
-    struct Funcionario* left;   
-    struct Funcionario* right;  
+
+
+// Definição da estrutura do funcionário
+typedef struct {
+    int matricula;
+    char nome[100];
+    char cargo[50];
+    float salario;
 } Funcionario;
 
-// Função para criar um novo nó
-Funcionario* criarFuncionario(int matricula, char nome[], char cargo[], float salario) {
-    Funcionario* novo = (Funcionario*)malloc(sizeof(Funcionario));
-    
-    novo->matricula = matricula;
-    strcpy(novo->nome, nome);
-    strcpy(novo->cargo, cargo);
-    novo->salario = salario;
-    novo->left = NULL;
-    novo->right = NULL;
-    
-    return novo;
+
+// Definição da estrutura TreeNode
+typedef struct TreeNode {
+    struct TreeNode *leftPtr;
+    Funcionario funcionario;
+    struct TreeNode *rightPtr;
+} TreeNode;
+
+typedef TreeNode *TreeNodePtr;
+
+
+
+// ====== PROTÓTIPOS DAS FUNÇÕES ====================
+
+void insertNode(TreeNodePtr *treePtr, Funcionario funcionario);
+TreeNodePtr searchNode(TreeNodePtr treePtr, int matricula);
+void updateFuncionario(TreeNodePtr treePtr, int matricula);
+void inOrder(TreeNodePtr treePtr);
+void freeTree(TreeNodePtr treePtr);
+void limparBuffer();
+
+// ============== IMPLEMENTAÇÃO DAS FUNÇÕES ====================
+
+//função para limpar o buffer do teclado
+void limparBuffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
 }
 
+// Função para inserir nó na árvore (ordenação por matrícula  )
+void insertNode(TreeNodePtr *treePtr, Funcionario funcionario) {
+	
+    // Se arvore estiver vazia
+    if (*treePtr == NULL) {
+        *treePtr = (TreeNodePtr)malloc(sizeof(TreeNode));
 
-Funcionario* inserirFuncionario(Funcionario* raiz, int matricula, char nome[], char cargo[], float salario) {
-     
-    if (raiz == NULL) {
-        return criarFuncionario(matricula, nome, cargo, salario);
-    }
-    
-    //se a matrícula já existe, não insere
-    if (matricula == raiz->matricula) {
-        printf("Erro: Matrícula %d já cadastrada!\n", matricula);
-        return raiz;
-    }
-    
-    // inserção na subárvore esquerda (matrícula menor)
-    if (matricula < raiz->matricula) {
-        raiz->left = inserirFuncionario(raiz->left, matricula, nome, cargo, salario);
+        // Se a memória foi alocada, atribui dados
+        if (*treePtr != NULL) {
+            (*treePtr)->funcionario = funcionario;
+            (*treePtr)->leftPtr = NULL;
+            (*treePtr)->rightPtr = NULL;
+        } 
+        else {
+            printf("Funcionário não inserido. Não há memória disponível.\n");
+        }
     } 
-    // inserção na subárvore direita (matrícula maior)
-    else if (matricula > raiz->matricula) {
-        raiz->right = inserirFuncionario(raiz->right, matricula, nome, cargo, salario);
-    }
-    
-    return raiz;
+    else { // Árvore não está vazia
+        // Comparação das matrículas  - a lógica de adicionar na arvore lado direito, ou esquerdo os valores
+        if (funcionario.matricula < (*treePtr)->funcionario.matricula) {
+            insertNode(&((*treePtr)->leftPtr), funcionario);
+        } 
+        else if (funcionario.matricula > (*treePtr)->funcionario.matricula) {
+            insertNode(&((*treePtr)->rightPtr), funcionario);
+        } 
+        else { // Matrícula duplicada - não insere
+            printf("Funcionário com matrícula %d já existe no sistema!\n", funcionario.matricula);
+        }	
+    } 
 }
 
-// função para buscar um funcionário pela matrícula
-Funcionario* buscarFuncionario(Funcionario* raiz, int matricula) {
-    
-    if (raiz == NULL) {
+// Função para buscar funcionário por matrícula
+TreeNodePtr searchNode(TreeNodePtr treePtr, int matricula) {
+    if (treePtr == NULL) {
         return NULL;
     }
     
-    // encontrou a matrícula
-    if (matricula == raiz->matricula) {
-        return raiz;
-    }
     
-   
-    if (matricula < raiz->matricula) {
-        return buscarFuncionario(raiz->left, matricula);
+    if (matricula == treePtr->funcionario.matricula) {
+        return treePtr;
     }
-   
+    else if (matricula < treePtr->funcionario.matricula) {
+        return searchNode(treePtr->leftPtr, matricula);
+    }
     else {
-        return buscarFuncionario(raiz->right, matricula);
+        return searchNode(treePtr->rightPtr, matricula);
     }
 }
 
-// função para encontrar o nó com menor valor (sucessor)
-Funcionario* encontrarMinimo(Funcionario* raiz) {
-    Funcionario* atual = raiz;
+// Função para atualizar os dados do funcionário
+void updateFuncionario(TreeNodePtr treePtr, int matricula) {
+    TreeNodePtr funcEncontrado = searchNode(treePtr, matricula);
     
-    //Percorre a subárvore esquerda até encontrar o menor
-    while (atual && atual->left != NULL) {
-        atual = atual->left;
-    }
-    return atual;
-}
-
-//Função para remover um funcionário da árvore
-Funcionario* removerFuncionario(Funcionario* raiz, int matricula) {
-    // árvore vazia ou nó não encontrado
-    if (raiz == NULL) {
-        printf("Funcionário com matrícula %d não encontrado!\n", matricula);
-        return NULL;
-    }
     
-    // Caso 1: matrícula menor, busca na subárvore esquerda
-    if (matricula < raiz->matricula) {
-        raiz->left = removerFuncionario(raiz->left, matricula);
+    if (funcEncontrado != NULL) {
+        printf("\n=== Atualizando dados do funcionário ===\n");
+        printf("Matrícula: %d\n", funcEncontrado->funcionario.matricula);
+        
+        printf("Nome atual: %s\n", funcEncontrado->funcionario.nome);         
+        printf("Novo nome: ");
+        fgets(funcEncontrado->funcionario.nome, 100, stdin);
+        funcEncontrado->funcionario.nome[strcspn(funcEncontrado->funcionario.nome, "\n")] = '\0';     //     Exemplo: strcspn("hello world", "o") retorna 4 (o 'o' é encontrado na posição 4, então ela lê "hell").
+        
+        printf("Cargo atual: %s\n", funcEncontrado->funcionario.cargo);
+        printf("Novo cargo: ");
+        fgets(funcEncontrado->funcionario.cargo, 50, stdin);
+        funcEncontrado->funcionario.cargo[strcspn(funcEncontrado->funcionario.cargo, "\n")] = '\0';
+        
+        
+        printf("Salário atual: R$ %.2f\n", funcEncontrado->funcionario.salario);
+        printf("Novo salário: R$ ");
+        scanf("%f", &funcEncontrado->funcionario.salario);
+        
+        printf("Dados atualizados com sucesso!\n");
     }
-    // Caso 2: matrícula maior, busca na subárvore direita
-    else if (matricula > raiz->matricula) {
-        raiz->right = removerFuncionario(raiz->right, matricula);
-    }
-    // Caso 3: encontrou o nó a ser removido
     else {
-        // Caso 3.1: nó com um ou nenhum filho
-        if (raiz->left == NULL) {
-            Funcionario* temp = raiz->right;
-            free(raiz);
-            printf("Funcionário removido com sucesso!\n");
-            return temp;
-        }
-        else if (raiz->right == NULL) {
-            Funcionario* temp = raiz->left;
-            free(raiz);
-            printf("Funcionário removido com sucesso!\n");
-            return temp;
-        }
-        
-        // Caso 3.2: nó com dois filhos
-        // Encontra o sucessor (menor valor da subárvore direita)
-        Funcionario* temp = encontrarMinimo(raiz->right);
-        
-        // Copia os dados do sucessor para o nó atual
-        raiz->matricula = temp->matricula;
-        strcpy(raiz->nome, temp->nome);
-        strcpy(raiz->cargo, temp->cargo);
-        raiz->salario = temp->salario;
-        
-        // Remove o sucessor da subárvore direita
-        raiz->right = removerFuncionario(raiz->right, temp->matricula);
-    }
-    
-    return raiz;
-}
-
-
-void atualizarFuncionario(Funcionario* raiz, int matricula) {
-    Funcionario* funcionario = buscarFuncionario(raiz, matricula);
-    
-    if (funcionario == NULL) {
         printf("Funcionário com matrícula %d não encontrado!\n", matricula);
-        return;
     }
-    
-    printf("\n=== Atualizando dados do funcionário ===\n");
-    printf("Matrícula: %d\n", funcionario->matricula);
-    printf("Nome atual: %s\n", funcionario->nome);
-    printf("Novo nome: ");
-    getchar();  
-    fgets(funcionario->nome, 100, stdin);
-    funcionario->nome[strcspn(funcionario->nome, "\n")] = '\0';
-    
-    printf("Cargo atual: %s\n", funcionario->cargo);
-    printf("Novo cargo: ");
-    fgets(funcionario->cargo, 50, stdin);
-    funcionario->cargo[strcspn(funcionario->cargo, "\n")] = '\0';
-    
-    printf("Salário atual: %.2f\n", funcionario->salario);
-    printf("Novo salário: ");
-    scanf("%f", &funcionario->salario);
-    
-    printf("Dados atualizados com sucesso!\n");
 }
 
-
-void exibirFuncionario(Funcionario* funcionario) {
-    printf("Matrícula: %d\n", funcionario->matricula);
-    printf("Nome: %s\n", funcionario->nome);
-    printf("Cargo: %s\n", funcionario->cargo);
-    printf("Salário: R$ %.2f\n", funcionario->salario);
-    printf("------------------------\n");
-}
-
-// Função para listar todos os funcionários em ordem crescente de matrícula
-void listarFuncionarios(Funcionario* raiz) {
-    if (raiz != NULL) {
-        // Percorre a subárvore esquerda (matrículas menores)
-        listarFuncionarios(raiz->left);
+// Percorrimento em ordem - ordem crescente por matricula
+void inOrder(TreeNodePtr treePtr) {
+	
+    // Se árvore não está vazia, percorre
+    if (treePtr != NULL) {
+        inOrder(treePtr->leftPtr);
+        printf("\n--- Funcionário ---\n");
+        printf("Matrícula: %d\n", treePtr->funcionario.matricula);
+        printf("Nome: %s\n", treePtr->funcionario.nome);
+        printf("Cargo: %s\n", treePtr->funcionario.cargo);
+        printf("Salário: R$ %.2f\n", treePtr->funcionario.salario);
+        printf("-------------------\n");
         
-        // Exibe o nó atual
-        exibirFuncionario(raiz);
-        
-        // Percorre a subárvore direita (matrículas maiores)
-        listarFuncionarios(raiz->right);
+        inOrder(treePtr->rightPtr);
     }
 }
 
 // Função para liberar a memória da árvore
-void liberarArvore(Funcionario* raiz) {
-    if (raiz != NULL) {
-        liberarArvore(raiz->left);
-        liberarArvore(raiz->right);
-        free(raiz);
+void freeTree(TreeNodePtr treePtr) {
+    if (treePtr != NULL) {
+        freeTree(treePtr->leftPtr);
+        freeTree(treePtr->rightPtr);
+        free(treePtr);
+    }
+}
+
+// Função para inserir novo funcionário 
+void inserirFuncionario(TreeNodePtr *rootPtr) {
+    Funcionario novoFuncionario;
+    
+    printf("\n=== Inserir Novo Funcionário ===\n");
+    
+    printf("Matrícula: ");
+    scanf("%d", &novoFuncionario.matricula);
+    limparBuffer();
+    
+    // Verifica se a matrícula já existe
+    if (searchNode(*rootPtr, novoFuncionario.matricula) != NULL) {
+        printf("Erro: Matrícula %d já cadastrada!\n", novoFuncionario.matricula);
+        return;
+	}
+    
+    printf("Nome: ");
+    fgets(novoFuncionario.nome, 100, stdin);
+    novoFuncionario.nome[strcspn(novoFuncionario.nome, "\n")] = '\0';
+    
+    printf("Cargo: ");
+    fgets(novoFuncionario.cargo, 50, stdin);
+    novoFuncionario.cargo[strcspn(novoFuncionario.cargo, "\n")] = '\0';
+    
+    printf("Salário: R$ ");
+    scanf("%f", &novoFuncionario.salario);
+    limparBuffer();
+    
+    insertNode(rootPtr, novoFuncionario);
+    printf("Funcionário inserido com sucesso!\n");
+}
+
+
+
+
+// Função para buscar funcionário (interface com usuário)
+void buscarFuncionario(TreeNodePtr rootPtr) {
+    int matricula;
+    TreeNodePtr funcEncontrado;
+    
+    printf("\n=== Buscar Funcionário ===\n");
+    printf("Digite a matrícula: ");
+    scanf("%d", &matricula);
+    limparBuffer();
+    
+    funcEncontrado = searchNode(rootPtr, matricula);
+    
+    if (funcEncontrado != NULL) {
+        printf("\n--- Funcionário Encontrado ---\n");
+        printf("Matrícula: %d\n", funcEncontrado->funcionario.matricula);
+        printf("Nome: %s\n", funcEncontrado->funcionario.nome);
+        printf("Cargo: %s\n", funcEncontrado->funcionario.cargo);
+        printf("Salário: R$ %.2f\n", funcEncontrado->funcionario.salario);
+        printf("-----------------------------\n");
+    }
+    else {
+        printf("Funcionário com matrícula %d não encontrado!\n", matricula);
     }
 }
 
 
-void exibirMenu() {
-    printf("\n=== SISTEMA DE CADASTRO DE FUNCIONÁRIOS ===\n");
-    printf("1 - Inserir funcionário\n");
-    printf("2 - Buscar funcionário\n");
-    printf("3 - Atualizar funcionário\n");
-    printf("4 - Remover funcionário\n");
-    printf("5 - Listar todos os funcionários\n");
-    printf("6 - Sair\n");
-    printf("Escolha uma opção: ");
+
+//Função para listar todos os funcionários 
+void listarFuncionarios(TreeNodePtr rootPtr) {
+    printf("\n=== Lista de Funcionários (Ordem Crescente por Matrícula) ===\n");
+    if (rootPtr == NULL) {
+        printf("Nenhum funcionário cadastrado.\n");
+    }
+    else {
+        inOrder(rootPtr);
+    }
 }
 
+
+
+
 int main() {
-    Funcionario* raiz = NULL;
-    int opcao, matricula;
-    char nome[100], cargo[50];
-    float salario;
+    TreeNodePtr rootPtr = NULL;
+    int opcao;
+    
+    int matricula;
     
     do {
-        exibirMenu();
+        printf("\n=== SISTEMA DE CADASTRO DE FUNCIONÁRIOS ===\n");
+        printf("1 - Inserir novo funcionário\n");
+        printf("2 - Buscar funcionário\n");
+        printf("3 - Atualizar dados do funcionário\n");
+        printf("4 - Listar todos os funcionários\n");
+        printf("0 - Sair\n");
+        printf("Escolha uma opção: ");
         scanf("%d", &opcao);
+        limparBuffer();
+        
         
         switch(opcao) {
-            case 1: 
-                printf("\n=== Inserir novo funcionário ===\n");
-                printf("Matrícula: ");
-                scanf("%d", &matricula);
-                
-               
-                if (buscarFuncionario(raiz, matricula) != NULL) {
-                    printf("Erro: Matrícula %d já cadastrada!\n", matricula);
-                    break;
-                }
-                
-                getchar();  
-                printf("Nome: ");
-                fgets(nome, 100, stdin);
-                nome[strcspn(nome, "\n")] = '\0';
-                
-                printf("Cargo: ");
-                fgets(cargo, 50, stdin);
-                cargo[strcspn(cargo, "\n")] = '\0';
-                
-                printf("Salário: ");
-                scanf("%f", &salario);
-                
-                raiz = inserirFuncionario(raiz, matricula, nome, cargo, salario);
-                printf("Funcionário inserido com sucesso!\n");
+            case 1:
+                inserirFuncionario(&rootPtr);
                 break;
-                
             case 2:
-                printf("\n=== Buscar funcionário ===\n");
-                printf("Matrícula: ");
+                buscarFuncionario(rootPtr);
+                break;
+            case 3:
+                printf("\n=== Atualizar Funcionário ===\n");
+                printf("Digite a matrícula do funcionário: ");
                 scanf("%d", &matricula);
-                
-                Funcionario* encontrado = buscarFuncionario(raiz, matricula);
-                if (encontrado != NULL) {
-                    printf("\nFuncionário encontrado:\n");
-                    exibirFuncionario(encontrado);
-                } else {
-                    printf("Funcionário com matrícula %d não encontrado!\n", matricula);
-                }
+                limparBuffer();
+                updateFuncionario(rootPtr, matricula);
                 break;
-                
-            case 3: 
-                printf("\n=== Atualizar funcionário ===\n");
-                printf("Matrícula do funcionário a ser atualizado: ");
-                scanf("%d", &matricula);
-                atualizarFuncionario(raiz, matricula);
+            case 4:
+                listarFuncionarios(rootPtr);
                 break;
-                
-            case 4: 
-                printf("\n=== Remover funcionário ===\n");
-                printf("Matrícula do funcionário a ser removido: ");
-                scanf("%d", &matricula);
-                raiz = removerFuncionario(raiz, matricula);
+            case 0:
+                printf("Encerrando sistema...\n");
                 break;
-                
-            case 5: 
-                printf("\n=== Lista de Funcionários (ordem crescente por matrícula) ===\n");
-                if (raiz == NULL) {
-                    printf("Nenhum funcionário cadastrado.\n");
-                } else {
-                    listarFuncionarios(raiz);
-                }
-                break;
-                
-            case 6: 
-                printf("\nEncerrando o sistema...\n");
-                liberarArvore(raiz);
-                break;
-                
             default:
-                printf("Opção inválida! Tente novamente.\n");
+                printf("Opção inválida!\n");
         }
-    } while(opcao != 6);
+    }   while(opcao != 0);
+    
+
+    freeTree(rootPtr);
     
     return 0;
 }
